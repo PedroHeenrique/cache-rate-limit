@@ -64,7 +64,7 @@ public class BeanConfiguration {
 				public ProxyManager<String> proxyManager(LettuceConnectionFactory connectionFactory){
 								RedisClient redisClient = RedisClient.create("redis://"+redisHost+":"+redisPort);
 								StatefulRedisConnection<String, byte[]> redisConnection =
-																redisClient.connect(RedisCodec.of(StringCodec.UTF8,ByteArrayCodec.INSTANCE));
+																redisClient.connect(RedisCodec.of(StringCodec.ASCII,ByteArrayCodec.INSTANCE));
 								return LettuceBasedProxyManager.builderFor(redisConnection).build();
 				}
 
