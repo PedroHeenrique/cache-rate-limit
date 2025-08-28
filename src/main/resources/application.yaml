@@ -1,0 +1,10 @@
+spring:
+  data:
+    redis:
+      host: "${REDIS_HOST}"
+      port: 6379
+  application:
+    name: CACHE RATE LIMIT
+
+api-url: "${API_URL}"
+cache-ttl-seconds: "${TTL_SECONDS}"
