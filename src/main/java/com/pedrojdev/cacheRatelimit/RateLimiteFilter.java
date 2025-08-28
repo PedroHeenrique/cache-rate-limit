@@ -3,6 +3,7 @@ package com.pedrojdev.cacheRatelimit;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.BucketConfiguration;
+import io.github.bucket4j.ConsumptionProbe;
 import io.github.bucket4j.distributed.proxy.ProxyManager;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 @Component
@@ -42,9 +44,16 @@ public class RateLimiteFilter implements Filter {
 
 								Bucket bucket = proxyManager.builder().build(clientKey, bucketConfigurationSupplier);
 
-								if(bucket.tryConsume(1)){
+								ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+
+
+								if(probe.isConsumed()){
+												response.setHeader("X-Rate-Limit-Remaining", String.valueOf(probe.getRemainingTokens()));
 												filterChain.doFilter(servletRequest,servletResponse);
 								}else{
+												long nanosToWait = probe.getNanosToWaitForRefill();
+												long secondsToWait = TimeUnit.NANOSECONDS.toSeconds(nanosToWait);
+												response.setHeader("X-Rate-Limit-Retry-After-Seconds", String.valueOf(secondsToWait));
 												handlerRateLimitExceeded(response);
 								}
 
