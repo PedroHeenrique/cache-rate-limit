@@ -73,7 +73,7 @@ public class BeanConfiguration {
 								Bandwidth bandwidth  = Bandwidth.builder()
 																.capacity(5)
 																.refillIntervally(5, Duration.ofMinutes(2))
-																.initialTokens(10)
+																.initialTokens(5)
 																.build();
 								return () -> BucketConfiguration.builder()
 																.addLimit(bandwidth)
