@@ -24,6 +24,7 @@ public class ApiController {
 
 
 				@GetMapping("/pokemon/")
+				@RateLimited(maxCapacity = 5,initialTokens = 5 ,tokensPerTimeWindow = 2, scope = "IP")
 				public ResponseEntity<?> getPokemon(@RequestParam(name = "nome") String nome){
         log.info("Requisicao recebida {}", nome);
 								Object result = servicoApi.get(nome);
