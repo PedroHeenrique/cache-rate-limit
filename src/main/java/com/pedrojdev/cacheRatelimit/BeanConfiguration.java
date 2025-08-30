@@ -26,20 +26,46 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import java.time.Duration;
 import java.util.function.Supplier;
 
-
+/**
+	* Classe de configuração de beans da aplicação.
+	*
+	* <p>
+	* Configura:
+	* <ul>
+	*     <li>Cache Redis com TTL configurável</li>
+	*     <li>Filter de rate limiting via Bucket4j para endpoints específicos</li>
+	*     <li>ProxyManager do Bucket4j para integração com Redis</li>
+	*     <li>Supplier de BucketConfiguration com regras de rate limit</li>
+	* </ul>
+	* </p>
+	*/
 @Configuration
 public class BeanConfiguration {
-
+				/**
+					* Tempo de vida em segundos para entradas de cache Redis.
+					*/
 				@Value("${cache-ttl-seconds:60}")
 				private long  ttlSeconds;
 
+				/**
+					* Host do Redis configurado via variável de ambiente.
+					*/
 				@Value("${REDIS_HOST}")
 				private String redisHost;
 
+				/**
+					* Porta do Redis configurada via propriedade Spring.
+					*/
 				@Value("${spring.data.redis.port}")
 				private String redisPort;
 
 
+				/**
+					* Configura o {@link CacheManager} com Redis, incluindo TTL e serialização.
+					*
+					* @param redisConnectionFactory fábrica de conexão Redis
+					* @return CacheManager configurado
+					*/
 				@Bean
 				public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory){
 								RedisCacheConfiguration cacheConfiguration  = RedisCacheConfiguration.defaultCacheConfig()
@@ -52,13 +78,26 @@ public class BeanConfiguration {
 
 				}
 
+				/**
+					* Registra o {@link Filter} de rate limiting para endpoints específicos.
+					*
+					* @param filter filtro de rate limit injetado pelo Spring
+					* @return FilterRegistrationBean configurado
+					*/
 				@Bean
 				public FilterRegistrationBean<Filter> bucket4jFilter(@Qualifier("rateLimiteFilter")Filter filter){
 								FilterRegistrationBean<Filter> registrationBean = new FilterRegistrationBean<>();
 								registrationBean.setFilter(filter);
-								registrationBean.addUrlPatterns("/api/v1/pokemon/*");
+								registrationBean.addUrlPatterns("/api/v1/*");
 								return registrationBean;
 				}
+
+				/**
+					* Cria o {@link ProxyManager} do Bucket4j integrado com Redis via Lettuce.
+					*
+					* @param connectionFactory conexão Lettuce do Spring
+					* @return ProxyManager configurado
+					*/
 
 				@Bean
 				public ProxyManager<String> proxyManager(LettuceConnectionFactory connectionFactory){
@@ -68,6 +107,20 @@ public class BeanConfiguration {
 								return LettuceBasedProxyManager.builderFor(redisConnection).build();
 				}
 
+				/**
+					* Supplier de {@link BucketConfiguration} padrão para rate limiting.
+					*
+					* <p>
+					* Neste caso, cada bucket terá:
+					* <ul>
+					*     <li>Capacidade máxima de 5 tokens</li>
+					*     <li>Refil de 5 tokens a cada 2 minutos</li>
+					*     <li>Tokens iniciais: 5</li>
+					* </ul>
+					* </p>
+					*
+					* @return Supplier de BucketConfiguration
+					*/
 				@Bean
 				public Supplier<BucketConfiguration> bucketConfigurationSupplier (){
 								Bandwidth bandwidth  = Bandwidth.builder()
